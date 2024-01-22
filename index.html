@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Organizer</title>
+</head>
+<body>
+    <input type="file" id="fileInput" multiple webkitdirectory>
+    <button onclick="organizeMedia()">Organize Media</button> 
+    <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/g/filesaver.js"></script>
+
+    <script>
+        function loadImageAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function () {
+                    const img = new Image();
+
+                    img.onload = function () {
+                        resolve(img);
+                    };
+
+                    img.onerror = function (error) {
+                        reject(error);
+                    };
+
+                    img.src = reader.result;
+                };
+
+                reader.onerror = function (error) {
+                    reject(error);
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function processMedia(file, zip) {
+            try {
+                const img = await loadImageAsync(file);
+
+                const folderName = img.width > img.height ? "horizontal" : "vertical";
+                const folder = zip.folder(folderName);
+                folder.file(file.webkitRelativePath || file.name, await fetch(img.src).then(response => response.blob()));
+            } catch (error) {
+                console.error("Error processing media:",file.name,error);
+            }
+        }
+
+        async function processFiles(files) {
+            const zip = new JSZip();
+            const promises = [];
+
+            for (const file of files) {
+                promises.push(processMedia(file, zip));
+            }
+
+            try {
+                await Promise.allSettled(promises);
+                console.log("All promises resolved");
+                const content = await zip.generateAsync({ type: 'blob' });
+                console.log("Zip generated successfully");
+                saveAs(content, 'organized_media.zip');
+                console.log("Zip saved successfully");
+            } catch (error) {
+                console.error("Error organizing media:", error);
+            }
+        }
+
+        function organizeMedia() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert("Please select a file.");
+                return;
+            }
+
+            processFiles(files);
+        }
+    </script>
+</body>
+</html>
