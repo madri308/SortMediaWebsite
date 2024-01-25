@@ -7,80 +7,163 @@
 </head>
 <body>
     <input type="file" id="fileInput" multiple webkitdirectory>
-    <button onclick="organizeMedia()">Organize Media</button> 
+    <button id="organizeButton">Organize Media</button>
+    <div id="loadingMessage"></div>
+
     <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/g/filesaver.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+
     <script>
-        function loadImageAsync(file) {
+        function getFileDimensions(file) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-
-                reader.onload = function () {
+                if (file.type.startsWith('image')) {
+                    // For images
                     const img = new Image();
-
-                    img.onload = function () {
-                        resolve(img);
+                    img.onload = function() {
+                        const dimensions = {
+                            width: this.width,
+                            height: this.height
+                        };
+                        resolve(dimensions);
                     };
-
-                    img.onerror = function (error) {
+                    img.onerror = function(error) {
                         reject(error);
                     };
-
-                    img.src = reader.result;
-                };
-
-                reader.onerror = function (error) {
-                    reject(error);
-                };
-
-                reader.readAsDataURL(file);
+                    img.src = URL.createObjectURL(file);
+                } else if (file.type.startsWith('video')) {
+                    // For videos
+                    const video = document.createElement('video');
+                    video.crossOrigin = 'anonymous'; // Enable cross-origin access if needed
+        
+                    video.onloadedmetadata = function() {
+                        const dimensions = {
+                            width: this.videoWidth,
+                            height: this.videoHeight
+                        };
+                        resolve(dimensions);
+                    };
+        
+                    video.onerror = function (error) {
+                        reject(error);
+                    };
+        
+                    video.src = URL.createObjectURL(file);
+                } else {
+                    // Unsupported file type
+                    reject(new Error('Unsupported file type'));
+                }
             });
         }
-
-        async function processMedia(file, zip) {
+        
+        async function processFiles(files, loadingMessage) {
             try {
-                const img = await loadImageAsync(file);
-
-                const folderName = img.width > img.height ? "horizontal" : "vertical";
-                const folder = zip.folder(folderName);
-                folder.file(file.webkitRelativePath || file.name, await fetch(img.src).then(response => response.blob()));
+                // Show loading message
+                loadingMessage.textContent = 'Sorting files...';
+        
+                const verticalFiles = [];
+                const horizontalFiles = [];
+        
+                // Categorize files into vertical and horizontal
+                for (const file of files) {
+                    const dimensions = await getFileDimensions(file);
+                    if (dimensions.width > dimensions.height) {
+                        horizontalFiles.push(file);
+                    } else {
+                        verticalFiles.push(file);
+                    }
+                }
+        
+                // Generate ZIP files for vertical and horizontal files separately
+                if (verticalFiles.length > 0) {
+                    const verticalChunks = chunkArray(verticalFiles, 5);
+                    const verticalZipPromises = verticalChunks.map(async (chunk, index) => {
+                        const zip = new JSZip();
+                        await processFilesInZip(chunk, zip);
+                        return zip.generateAsync({ type: 'blob' });
+                    });
+        
+                    // Wait for all ZIPs to be generated
+                    const verticalZipBlobs = await Promise.all(verticalZipPromises);
+        
+                    // Create download links for each vertical zip file
+                    verticalZipBlobs.forEach((zipBlob, index) => {
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = URL.createObjectURL(zipBlob);
+                        downloadLink.download = `vertical_files_${index + 1}.zip`;
+                        downloadLink.click();
+                    });
+                }
+        
+                if (horizontalFiles.length > 0) {
+                    const horizontalChunks = chunkArray(horizontalFiles, 5);
+                    const horizontalZipPromises = horizontalChunks.map(async (chunk, index) => {
+                        const zip = new JSZip();
+                        await processFilesInZip(chunk, zip);
+                        return zip.generateAsync({ type: 'blob' });
+                    });
+        
+                    // Wait for all ZIPs to be generated
+                    const horizontalZipBlobs = await Promise.all(horizontalZipPromises);
+        
+                    // Create download links for each horizontal zip file
+                    horizontalZipBlobs.forEach((zipBlob, index) => {
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = URL.createObjectURL(zipBlob);
+                        downloadLink.download = `horizontal_files_${index + 1}.zip`;
+                        downloadLink.click();
+                    });
+                }
+        
+                // Hide loading message
+                loadingMessage.textContent = 'Files sorted successfully!';
             } catch (error) {
-                console.error("Error processing media:",file.name,error);
+                console.error("Error sorting files:", error);
+                // Show error message
+                loadingMessage.textContent = 'Error sorting files.';
             }
         }
-
-        async function processFiles(files) {
-            const zip = new JSZip();
-            const promises = [];
-
+        
+        async function processFilesInZip(files, zip) {
             for (const file of files) {
-                promises.push(processMedia(file, zip));
-            }
-
-            try {
-                await Promise.allSettled(promises);
-                console.log("All promises resolved");
-                const content = await zip.generateAsync({ type: 'blob' });
-                console.log("Zip generated successfully");
-                saveAs(content, 'organized_media.zip');
-                console.log("Zip saved successfully");
-            } catch (error) {
-                console.error("Error organizing media:", error);
+                try {
+                    const dimensions = await getFileDimensions(file);
+        
+                    // Check if the file is vertical or horizontal based on dimensions
+                    if (dimensions.width > dimensions.height) {
+                        // Horizontal file
+                        zip.folder('horizontal').file(file.name, file);
+                    } else {
+                        // Vertical file
+                        zip.folder('vertical').file(file.name, file);
+                    }
+                } catch (error) {
+                    console.error("Error processing file:", error);
+                }
             }
         }
-
-        function organizeMedia() {
-            const fileInput = document.getElementById('fileInput');
-            const files = fileInput.files;
-
-            if (files.length === 0) {
-                alert("Please select a file.");
-                return;
+        
+        function chunkArray(array, chunkSize) {
+            const result = [];
+            for (let i = 0; i < array.length; i += chunkSize) {
+                result.push(array.slice(i, i + chunkSize));
             }
-
-            processFiles(files);
+            return result;
         }
-    </script>
+        
+        document.getElementById('organizeButton').addEventListener('click', async function() {
+            const files = document.getElementById('fileInput').files;
+            const loadingMessage = document.getElementById('loadingMessage');
+        
+            if (files.length > 0) {
+                // Process all files
+                await processFiles(files, loadingMessage);
+        
+                // Reset loading message
+                loadingMessage.textContent = '';
+            }
+        });
+        </script>
 </body>
 </html>
