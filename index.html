@@ -8,10 +8,13 @@
     <style>
         h1{
             font-family: WF Visual Sans,sans-serif;
+            text-align: center;
+            padding-top: 10%;
         }
 
         h2{
             font-family: WF Visual Sans,sans-serif;
+            /* text-align: center; */
         }
 
         p{
@@ -19,6 +22,11 @@
         }
 
 /* CSS */
+/* input[type="file"]::file-selector-button{
+    display: block !important;
+    padding: calc(.875rem - 1px) calc(1.5rem - 1px) !important;
+    text-align: center !important;
+} */
 button, input[type="file"]::file-selector-button {
   align-items: center;
   background-color: #FFFFFF;
@@ -45,6 +53,7 @@ button, input[type="file"]::file-selector-button {
   touch-action: manipulation;
   vertical-align: baseline;
   width: auto;
+  margin: 5px;
 }
 
 button:hover, input[type="file"]::file-selector-button:hover,
@@ -81,6 +90,10 @@ aside{
 }
 main{
     min-width: 33%;
+    text-align: center;
+}
+footer{
+    text-align: center;
 }
     </style>
 </head>
@@ -89,9 +102,9 @@ main{
     <header>
         <h1>SORT MEDIA BY ORIENTATION</h1>
     </header>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9655374788764860"
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9655374788764860"
     crossorigin="anonymous"></script>
-    <!-- ad1 -->
+    ad1
     <ins class="adsbygoogle"
         style="display:block"
         data-ad-client="ca-pub-9655374788764860"
@@ -100,7 +113,7 @@ main{
         data-full-width-responsive="true"></ins>
     <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    </script> -->
     <section id="section">
         <aside>
             <!-- ad3 -->
@@ -118,8 +131,8 @@ main{
         </aside>
         <main>
             <h2>Select the folder with the media files you want to sort</h2>
-            <input type="file" id="fileInput" multiple webkitdirectory>
             <button id="organizeButton">Organize Media</button>
+            <input type="file" id="fileInput" multiple webkitdirectory>
             <div id="loadingMessage"></div>
         </main>
         <aside>
@@ -303,6 +316,8 @@ main{
         
                 // Reset loading message
                 loadingMessage.textContent = '';
+            }else{
+                alert("Please select some files")
             }
         });
     </script>
