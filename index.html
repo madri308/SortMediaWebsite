@@ -8,8 +8,7 @@
     <style>
         h1{
             font-family: WF Visual Sans,sans-serif;
-            text-align: center;
-            padding-top: 10%;
+            font-size: 40px;
         }
 
         h2{
@@ -80,7 +79,7 @@ button:active, input[type="file"]::file-selector-button:active {
 }
 
 @media (max-width: 800px) {
-  #section {
+  #section, header {
     flex-direction: column;
   }
 }
@@ -95,25 +94,33 @@ main{
 footer{
     text-align: center;
 }
+header{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10%;
+    column-gap: 50px;
+}
+#title{
+    text-align: center;
+}
+
+#description{
+    /* min-width: 70%; */
+    text-align: center;
+    font-size: medium;
+}
+
     </style>
 </head>
 <body>
-
     <header>
-        <h1>SORT MEDIA BY ORIENTATION</h1>
+        <h1 id="title">SORT MEDIA BY ORIENTATION</h1>
+        <p id="description">
+            Effortlessly organize your photos and videos based on orientation—vertical or horizontal.<br>
+            Perfect for drone footage and quick media sorting. Upload, let our smart algorithm work its magic, and enjoy a clutter-free collection.<br>
+            Simplify your media management with our website! 📷 🔄</p>
     </header>
-    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9655374788764860"
-    crossorigin="anonymous"></script>
-    ad1
-    <ins class="adsbygoogle"
-        style="display:block"
-        data-ad-client="ca-pub-9655374788764860"
-        data-ad-slot="9726757686"
-        data-ad-format="auto"
-        data-full-width-responsive="true"></ins>
-    <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-    </script> -->
     <section id="section">
         <aside>
             <!-- ad3 -->
